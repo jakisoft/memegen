@@ -2,418 +2,443 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VibePlayer Pro - Experience Luxury</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VibePlayer Pro - Luxury Streaming</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- AOS Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         
         :root {
-            --primary-bg: #191919;
-            --accent: #E5E7EB; /* Elegant Silver-White */
+            --bg-deep: #191919;
+            --accent: #ffffff;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--primary-bg);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
             color: white;
+            margin: 0;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
+        /* Tipografi Presisi - Mencegah "Kebesaran" */
+        .text-tiny { font-size: 0.65rem; }
+        .text-compact { font-size: 0.8rem; }
+        
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #191919; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
 
-        /* Fullscreen Landscape Hack for Mobile */
-        @media (max-width: 768px) {
-            .video-fullscreen:fullscreen {
-                transform: rotate(0deg);
+        /* Mode Fullscreen Landscape Mobile */
+        #video-container:fullscreen {
+            width: 100vw;
+            height: 100vh;
+            background: black;
+        }
+
+        @media (max-width: 915px) and (orientation: landscape) {
+            #video-container:fullscreen {
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
         }
 
-        /* Progress Bar Styling */
+        /* Glassmorphism Presisi */
+        .glass-ui {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Slider Styling */
         input[type="range"] {
             -webkit-appearance: none;
-            background: rgba(255,255,255,0.1);
-            height: 4px;
+            height: 2px;
+            background: rgba(255,255,255,0.2);
             border-radius: 2px;
+            cursor: pointer;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            height: 12px;
-            width: 12px;
+            height: 10px;
+            width: 10px;
             border-radius: 50%;
             background: white;
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
         }
 
-        .no-select { user-select: none; -webkit-tap-highlight-color: transparent; }
+        /* Animasi UI Toggle */
+        .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(5px); }
+        .ui-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .transition-ui { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* Dropdown Animation */
-        .dropdown-enter { opacity: 0; transform: translateY(10px); pointer-events: none; }
-        .dropdown-active { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        /* Rotate Helper */
+        .is-fullscreen { cursor: none; }
         
-        /* Glassmorphism */
-        .glass {
-            background: rgba(25, 25, 25, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+        .speed-2x-badge {
+            background: rgba(255,255,255,0.15);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased selection:bg-white/20">
 
-    <!-- Header -->
-    <header class="px-6 py-4 flex justify-between items-center border-b border-white/5 fixed w-full top-0 z-50 glass">
+    <!-- Navbar Minimalis -->
+    <nav class="fixed top-0 w-full z-50 px-6 py-3 border-b border-white/5 glass-ui flex justify-between items-center">
         <div class="flex items-center gap-2">
-            <div class="w-8 h-8 bg-white rounded flex items-center justify-center">
-                <i data-lucide="play" class="text-[#191919] w-5 h-5 fill-current"></i>
+            <div class="w-6 h-6 bg-white rounded flex items-center justify-center">
+                <i data-lucide="play" class="text-[#191919] w-3 h-3 fill-current"></i>
             </div>
-            <span class="text-xl font-bold tracking-tight">VIBE<span class="font-light text-gray-400">PLAYER</span></span>
+            <span class="text-sm font-bold tracking-tighter">VIBE<span class="font-light opacity-50">PRO</span></span>
         </div>
-        <div class="flex items-center gap-6 text-sm font-medium text-gray-400">
-            <a href="#" class="hover:text-white transition-colors">Beranda</a>
-            <a href="#" class="hover:text-white transition-colors">Premium</a>
-            <button class="w-8 h-8 rounded-full bg-gradient-to-tr from-gray-700 to-gray-500"></button>
+        <div class="flex items-center gap-5">
+            <button class="text-tiny font-semibold opacity-60 hover:opacity-100 transition-opacity uppercase tracking-widest">Library</button>
+            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 border border-white/10"></div>
         </div>
-    </header>
+    </nav>
 
-    <main class="pt-24 pb-12 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <main class="pt-20 pb-10 max-w-6xl mx-auto px-4">
+        <div class="flex flex-col lg:flex-row gap-8">
             
-            <!-- Left Side: Video Content -->
-            <div class="lg:col-span-2 space-y-6">
-                <!-- Video Player Container -->
-                <div id="video-wrapper" class="relative group aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10" data-aos="fade-up">
+            <!-- Player Section -->
+            <div class="flex-1 space-y-5">
+                <!-- Video Wrap -->
+                <div id="video-container" class="relative group aspect-video bg-black rounded-lg overflow-hidden ring-1 ring-white/5 shadow-2xl transition-ui">
                     <video id="main-video" class="w-full h-full object-contain">
                         <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
                     </video>
 
-                    <!-- Custom UI Layer (Normal Mode) -->
-                    <div id="video-controls" class="absolute inset-0 flex flex-col justify-between p-4 transition-opacity duration-300 opacity-0 group-hover:opacity-100 z-10 bg-gradient-to-t from-black/80 via-transparent to-black/40">
-                        <!-- Top (Normal mode hide specific, but added for consistency) -->
-                        <div class="flex justify-between items-start opacity-0 group-hover:opacity-100">
-                            <h3 id="video-title-overlay" class="text-sm font-medium text-white/80">Eps 01: Awal Perjalanan</h3>
+                    <!-- Click Overlay (Untuk Toggle UI) -->
+                    <div id="click-overlay" class="absolute inset-0 z-10 cursor-pointer"></div>
+
+                    <!-- UI NORMAL MODE -->
+                    <div id="normal-ui" class="absolute inset-0 z-20 transition-ui flex flex-col justify-between pointer-events-none">
+                        <div class="p-4 flex justify-end">
+                             <div id="speed-indicator" class="speed-2x-badge opacity-0 transition-opacity">2.0X SPEED</div>
                         </div>
 
-                        <!-- Middle: Big Play/Skip -->
-                        <div class="flex items-center justify-center gap-12 text-white">
-                            <button onclick="rewind(10)" class="hover:scale-110 transition-transform active:opacity-50"><i data-lucide="rewind" class="w-8 h-8"></i></button>
-                            <button id="play-btn-center" onclick="togglePlay()" class="bg-white/10 p-4 rounded-full backdrop-blur-sm hover:bg-white/20 transition-all">
-                                <i id="play-icon-center" data-lucide="play" class="w-10 h-10 fill-current"></i>
+                        <!-- Center Play/Skip -->
+                        <div class="flex items-center justify-center gap-10 text-white pointer-events-auto">
+                            <button onclick="rewind(10)" class="hover:scale-110 active:scale-95 transition-all opacity-80 hover:opacity-100"><i data-lucide="rotate-ccw" class="w-6 h-6"></i></button>
+                            <button id="play-center" onclick="togglePlay()" class="bg-white/10 p-4 rounded-full backdrop-blur-md ring-1 ring-white/20 hover:bg-white/20 transition-all">
+                                <i data-lucide="play" class="w-7 h-7 fill-current"></i>
                             </button>
-                            <button onclick="forward(10)" class="hover:scale-110 transition-transform active:opacity-50"><i data-lucide="fast-forward" class="w-8 h-8"></i></button>
+                            <button onclick="forward(10)" class="hover:scale-110 active:scale-95 transition-all opacity-80 hover:opacity-100"><i data-lucide="rotate-cw" class="w-6 h-6"></i></button>
                         </div>
 
                         <!-- Bottom Controls -->
-                        <div class="space-y-3">
-                            <!-- Seek Bar -->
-                            <div class="flex items-center gap-3">
-                                <span class="text-[10px] font-mono opacity-80" id="current-time">0:00</span>
-                                <input id="progress-bar" type="range" value="0" step="0.1" class="flex-1 accent-white">
-                                <span class="text-[10px] font-mono opacity-80" id="duration">0:00</span>
+                        <div class="p-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-auto">
+                            <div class="flex items-center gap-3 mb-3">
+                                <span class="text-[10px] font-mono opacity-60" id="cur-time">0:00</span>
+                                <input id="seek-bar" type="range" value="0" step="0.1" class="flex-1 accent-white">
+                                <span class="text-[10px] font-mono opacity-60" id="total-dur">0:00</span>
                             </div>
-
                             <div class="flex justify-between items-center">
                                 <div class="flex items-center gap-4">
-                                    <button onclick="togglePlay()" class="hover:text-white/80"><i data-lucide="play" id="play-icon-small" class="w-5 h-5"></i></button>
-                                    <div class="flex items-center gap-2 group/vol">
-                                        <i data-lucide="volume-2" class="w-5 h-5"></i>
-                                        <input type="range" class="w-16 h-1 bg-white/20" value="80">
+                                    <button onclick="togglePlay()"><i data-lucide="play" id="play-mini" class="w-4 h-4"></i></button>
+                                    <div class="flex items-center gap-2 group">
+                                        <i data-lucide="volume-2" class="w-4 h-4 opacity-60"></i>
+                                        <input type="range" class="w-16 opacity-0 group-hover:opacity-100 transition-opacity" value="80">
                                     </div>
                                 </div>
-                                <div class="flex items-center gap-4 relative">
-                                    <!-- Custom Resolution Dropdown -->
+                                <div class="flex items-center gap-4">
+                                    <!-- Custom Res Dropdown -->
                                     <div class="relative">
-                                        <button onclick="toggleRes()" class="text-xs border border-white/20 px-2 py-1 rounded hover:bg-white/10">1080p</button>
-                                        <div id="res-dropdown" class="absolute bottom-full right-0 mb-2 w-32 glass border border-white/10 rounded-lg overflow-hidden dropdown-enter transition-all shadow-xl">
-                                            <div class="p-2 text-[10px] uppercase tracking-widest text-gray-400 border-b border-white/5">Resolusi</div>
-                                            <button class="w-full text-left px-3 py-2 text-xs hover:bg-white/10">4K (Premium)</button>
-                                            <button class="w-full text-left px-3 py-2 text-xs bg-white/20 font-bold">1080p</button>
-                                            <button class="w-full text-left px-3 py-2 text-xs hover:bg-white/10">720p</button>
-                                            <button class="w-full text-left px-3 py-2 text-xs hover:bg-white/10">480p</button>
+                                        <button onclick="toggleRes()" class="text-[10px] font-bold border border-white/20 px-2 py-1 rounded hover:bg-white/10 uppercase">1080p</button>
+                                        <div id="res-menu" class="absolute bottom-full right-0 mb-2 w-28 glass-ui border border-white/10 rounded-lg overflow-hidden opacity-0 scale-95 pointer-events-none transition-all">
+                                            <button class="w-full text-left px-3 py-2 text-tiny hover:bg-white/10 border-b border-white/5">4K HDR</button>
+                                            <button class="w-full text-left px-3 py-2 text-tiny bg-white/20 font-bold">1080p</button>
+                                            <button class="w-full text-left px-3 py-2 text-tiny hover:bg-white/10">720p</button>
                                         </div>
                                     </div>
-                                    <button onclick="goFullscreen()" class="hover:scale-110 transition-all"><i data-lucide="maximize" class="w-5 h-5"></i></button>
+                                    <button onclick="goFullscreen()"><i data-lucide="maximize" class="w-4 h-4"></i></button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Hold for 2x Indicator -->
-                    <div id="speed-indicator" class="absolute top-8 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full opacity-0 transition-opacity pointer-events-none z-20 flex items-center gap-2">
-                        <span class="text-xs font-bold tracking-widest">2.0X SPEED</span>
-                        <i data-lucide="chevrons-right" class="w-4 h-4"></i>
+                    <!-- UI FULLSCREEN MODE -->
+                    <div id="full-ui" class="hidden fixed inset-0 z-50 glass-ui flex-col justify-between p-6 pointer-events-none transition-ui">
+                        <!-- Top Header -->
+                        <div class="flex justify-between items-center pointer-events-auto">
+                            <button onclick="exitFullscreen()" class="flex items-center gap-4 group">
+                                <i data-lucide="chevron-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
+                                <div class="flex flex-col text-left">
+                                    <span class="text-tiny opacity-50 uppercase tracking-widest">Memutar Sekarang</span>
+                                    <span class="text-compact font-bold">The Art of Minimalist Living - Part I</span>
+                                </div>
+                            </button>
+                            <div class="flex gap-5 items-center">
+                                <button onclick="toggleLock()" id="lock-btn" class="p-2 rounded-full hover:bg-white/10 transition-all"><i data-lucide="unlock" class="w-4 h-4"></i></button>
+                                <button class="p-2 rounded-full hover:bg-white/10 transition-all"><i data-lucide="settings" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Center Controls Fullscreen -->
+                        <div id="fs-middle" class="flex items-center justify-center gap-10 md:gap-20 pointer-events-auto">
+                            <button class="opacity-40 hover:opacity-100 transition-opacity"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
+                            <button onclick="rewind(10)" class="hover:scale-110 active:scale-95 transition-all"><i data-lucide="rotate-ccw" class="w-8 h-8"></i></button>
+                            <button onclick="togglePlay()" class="bg-white text-black p-5 rounded-full ring-8 ring-white/10 hover:scale-105 transition-all">
+                                <i data-lucide="play" id="fs-play-icon" class="w-8 h-8 fill-current"></i>
+                            </button>
+                            <button onclick="forward(10)" class="hover:scale-110 active:scale-95 transition-all"><i data-lucide="rotate-cw" class="w-8 h-8"></i></button>
+                            <button class="opacity-40 hover:opacity-100 transition-opacity"><i data-lucide="skip-forward" class="w-6 h-6"></i></button>
+                        </div>
+
+                        <!-- Bottom Controls Fullscreen -->
+                        <div id="fs-bottom" class="space-y-4 pointer-events-auto">
+                            <div class="flex items-center gap-4">
+                                <span class="text-tiny font-mono opacity-50" id="fs-cur-time">00:00</span>
+                                <input id="fs-seek-bar" type="range" value="0" step="0.1" class="flex-1">
+                                <span class="text-tiny font-mono opacity-50" id="fs-total-dur">00:00</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center gap-8">
+                                    <div class="flex items-center gap-3">
+                                        <i data-lucide="volume-2" class="w-4 h-4 opacity-50"></i>
+                                        <input type="range" class="w-24">
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button class="text-tiny border border-white/20 px-3 py-1 rounded-full hover:bg-white/10">Subtitle: Off</button>
+                                    </div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <!-- Prev/Next Episode Buttons -->
+                                    <button class="flex items-center gap-2 text-tiny font-bold glass-ui border border-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition-all">
+                                        <i data-lucide="chevron-left" class="w-3 h-3"></i> PREV EPS
+                                    </button>
+                                    <button class="flex items-center gap-2 text-tiny font-bold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-all">
+                                        NEXT EPS <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Metadata -->
-                <div class="space-y-4" data-aos="fade-up" data-aos-delay="100">
+                <!-- Metadata & Tabs -->
+                <div class="space-y-4" data-aos="fade-up">
                     <div class="flex justify-between items-start">
-                        <div>
-                            <h1 class="text-2xl font-bold tracking-tight">The Art of Minimalist Living - Part I</h1>
-                            <p class="text-sm text-gray-400 mt-1">1,240,553 Menonton • 12 Feb 2024</p>
+                        <div class="space-y-1">
+                            <h1 class="text-lg font-bold tracking-tight">The Art of Minimalist Living - Part I</h1>
+                            <div class="flex items-center gap-3 text-tiny text-gray-400">
+                                <span>1.2M Menonton</span>
+                                <span>•</span>
+                                <span>Februari 2024</span>
+                            </div>
                         </div>
                         <div class="flex gap-2">
-                            <button class="flex items-center gap-2 bg-white text-[#191919] px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-200 transition-all">
-                                <i data-lucide="share-2" class="w-4 h-4"></i> Bagikan
-                            </button>
-                            <button class="flex items-center gap-2 border border-white/10 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/5 transition-all">
-                                <i data-lucide="download" class="w-4 h-4"></i> Unduh
-                            </button>
+                            <button class="flex items-center gap-2 border border-white/10 px-3 py-2 rounded-lg text-tiny font-bold hover:bg-white/5"><i data-lucide="share" class="w-3 h-3"></i> BAGIKAN</button>
+                            <button class="flex items-center gap-2 bg-white text-black px-3 py-2 rounded-lg text-tiny font-bold hover:opacity-90"><i data-lucide="download" class="w-3 h-3"></i> UNDUH</button>
                         </div>
                     </div>
-                    
-                    <div class="p-4 bg-white/5 rounded-xl border border-white/5">
-                        <p class="text-sm leading-relaxed text-gray-300">
-                            Video ini membahas bagaimana cara menerapkan gaya hidup minimalis di tengah dunia yang bising. Kita akan mengeksplorasi estetika, ketenangan, dan fungsionalitas.
-                            <button class="text-white font-bold ml-1">...Selengkapnya</button>
-                        </p>
+
+                    <!-- Tabs Episode -->
+                    <div class="pt-2 border-b border-white/5 flex gap-6">
+                        <button class="text-tiny font-bold border-b-2 border-white pb-2">Deskripsi</button>
+                        <button class="text-tiny font-bold text-gray-500 pb-2">Episode (12)</button>
+                        <button class="text-tiny font-bold text-gray-500 pb-2">Komentar</button>
                     </div>
+
+                    <p class="text-compact text-gray-400 leading-relaxed max-w-2xl">
+                        Mempelajari bagaimana kesederhanaan dapat meningkatkan produktivitas dan kedamaian batin dalam dunia modern yang serba cepat.
+                    </p>
                 </div>
 
                 <!-- Comments -->
-                <div class="pt-8 space-y-6" data-aos="fade-up">
-                    <h3 class="font-bold border-l-4 border-white pl-3">Komentar (42)</h3>
+                <div class="pt-6 space-y-4">
                     <div class="flex gap-4">
-                        <div class="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0"></div>
-                        <div class="flex-1 space-y-3">
-                            <input type="text" placeholder="Tulis komentar..." class="w-full bg-transparent border-b border-white/10 py-2 focus:outline-none focus:border-white transition-all text-sm">
-                            <div class="flex justify-end">
-                                <button class="text-xs font-bold text-gray-500">BATAL</button>
-                                <button class="ml-4 text-xs font-bold bg-white/10 px-4 py-2 rounded-full">KIRIM</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mock Comment -->
-                    <div class="flex gap-4">
-                        <div class="w-10 h-10 rounded-full bg-indigo-500 flex-shrink-0"></div>
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold">Alex Rivera</span>
-                                <span class="text-[10px] text-gray-500">2 jam yang lalu</span>
-                            </div>
-                            <p class="text-sm text-gray-400">Cinematography-nya luar biasa! Transisi dan warnanya sangat clean.</p>
-                            <div class="flex items-center gap-4 pt-2">
-                                <button class="flex items-center gap-1 text-[10px] text-gray-500"><i data-lucide="thumbs-up" class="w-3 h-3"></i> 12</button>
-                                <button class="text-[10px] text-gray-500 font-bold">BALAS</button>
-                            </div>
-                        </div>
+                        <div class="w-8 h-8 rounded-full bg-gray-700"></div>
+                        <input type="text" placeholder="Tambahkan komentar..." class="bg-transparent border-b border-white/10 flex-1 py-1 text-compact focus:outline-none focus:border-white transition-all">
                     </div>
                 </div>
             </div>
 
-            <!-- Right Side: Episodes / Tabs -->
-            <div class="lg:col-span-1 space-y-6" data-aos="fade-left">
-                <div class="flex gap-4 border-b border-white/10 pb-2">
-                    <button class="text-sm font-bold border-b-2 border-white pb-2 px-1">Episode</button>
-                    <button class="text-sm font-medium text-gray-500 pb-2 px-1">Terkait</button>
-                </div>
-
-                <div class="space-y-3 overflow-y-auto max-h-[600px] pr-2">
-                    <!-- Episode Items -->
-                    <div class="group flex gap-3 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer ring-1 ring-white/5 bg-white/5">
-                        <div class="relative w-32 aspect-video rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-                            <div class="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/0 transition-all">
-                                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
-                            </div>
-                            <span class="absolute bottom-1 right-1 text-[8px] bg-black/80 px-1 rounded">12:40</span>
-                        </div>
-                        <div class="flex flex-col justify-center">
-                            <span class="text-[10px] text-indigo-400 font-bold uppercase tracking-tighter">Memutar</span>
-                            <h4 class="text-sm font-medium line-clamp-1 leading-tight">Eps 01: Awal Perjalanan</h4>
-                            <span class="text-[10px] text-gray-500 mt-1 font-mono">Gratis</span>
-                        </div>
-                    </div>
-
+            <!-- Side Sidebar: Episode List -->
+            <div class="w-full lg:w-72 space-y-4" data-aos="fade-left">
+                <h3 class="text-tiny font-bold uppercase tracking-widest opacity-50">Daftar Putar</h3>
+                <div class="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                     <script>
-                        // Generate more episodes
-                        for(let i=2; i<=10; i++){
+                        const episodes = [
+                            { title: "Awal Perjalanan", duration: "12:40", active: true },
+                            { title: "Menemukan Fokus", duration: "10:15", active: false },
+                            { title: "Ruang yang Bersih", duration: "15:20", active: false },
+                            { title: "Digital Minimalis", duration: "08:45", active: false },
+                            { title: "Kebiasaan Baru", duration: "11:30", active: false }
+                        ];
+                        episodes.forEach((ep, i) => {
                             document.write(`
-                            <div class="group flex gap-3 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer">
-                                <div class="relative w-32 aspect-video rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-                                    <span class="absolute bottom-1 right-1 text-[8px] bg-black/80 px-1 rounded">15:20</span>
+                                <div class="group flex gap-3 p-2 rounded-lg transition-all cursor-pointer ${ep.active ? 'bg-white/5 ring-1 ring-white/10' : 'hover:bg-white/5'}">
+                                    <div class="w-24 aspect-video bg-gray-800 rounded relative overflow-hidden flex-shrink-0">
+                                        ${ep.active ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i data-lucide="play" class="w-3 h-3 fill-current"></i></div>' : ''}
+                                        <span class="absolute bottom-1 right-1 text-[8px] bg-black/80 px-1 rounded">${ep.duration}</span>
+                                    </div>
+                                    <div class="flex flex-col justify-center min-w-0">
+                                        <h4 class="text-tiny font-semibold truncate ${ep.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}">Eps ${i+1}: ${ep.title}</h4>
+                                        <span class="text-[9px] text-gray-600 mt-1 uppercase">${ep.active ? 'Sedang Diputar' : 'Belum Ditonton'}</span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-col justify-center">
-                                    <h4 class="text-sm font-medium text-gray-400 group-hover:text-white transition-colors line-clamp-1">Eps ${String(i).padStart(2, '0')}: Kelanjutan Cerita</h4>
-                                    <span class="text-[10px] text-gray-600 mt-1 font-mono">Premium</span>
-                                </div>
-                            </div>
                             `);
-                        }
+                        });
                     </script>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Fullscreen Custom UI (Simulasi - Overlay Aktif saat Fullscreen) -->
-    <div id="fs-ui" class="hidden fixed inset-0 z-[9999] bg-black flex-col justify-between p-6 pointer-events-none">
-        <!-- Top Bar -->
-        <div class="flex justify-between items-center pointer-events-auto">
-            <button onclick="exitFullscreen()" class="flex items-center gap-3 text-white/80 hover:text-white transition-all">
-                <i data-lucide="chevron-left" class="w-6 h-6"></i>
-                <div class="flex flex-col">
-                    <span class="text-xs opacity-60">Sedang Memutar</span>
-                    <span class="text-sm font-bold tracking-tight">The Art of Minimalist Living - Part I</span>
-                </div>
-            </button>
-            <div class="flex gap-6 items-center">
-                <button onclick="toggleLock()" id="lock-btn" class="p-2 rounded-full hover:bg-white/10 transition-all"><i data-lucide="unlock" class="w-5 h-5"></i></button>
-                <button class="p-2 rounded-full hover:bg-white/10 transition-all"><i data-lucide="cast" class="w-5 h-5"></i></button>
-            </div>
-        </div>
-
-        <!-- Middle Controls -->
-        <div id="fs-middle" class="flex items-center justify-around pointer-events-auto max-w-2xl mx-auto w-full">
-            <button class="text-white/40 hover:text-white transition-all"><i data-lucide="skip-back" class="w-8 h-8"></i></button>
-            <button onclick="rewind(10)" class="text-white/60 hover:text-white transition-all"><i data-lucide="rotate-ccw" class="w-10 h-10"></i></button>
-            <button onclick="togglePlay()" class="bg-white text-black p-6 rounded-full hover:scale-105 transition-all"><i data-lucide="play" id="fs-play-icon" class="w-10 h-10 fill-current"></i></button>
-            <button onclick="forward(10)" class="text-white/60 hover:text-white transition-all"><i data-lucide="rotate-cw" class="w-10 h-10"></i></button>
-            <button class="text-white/40 hover:text-white transition-all"><i data-lucide="skip-forward" class="w-8 h-8"></i></button>
-        </div>
-
-        <!-- Bottom Bar -->
-        <div id="fs-bottom" class="space-y-4 pointer-events-auto">
-            <div class="flex items-center gap-4">
-                <span class="text-xs font-mono opacity-60" id="fs-current-time">00:00</span>
-                <input id="fs-progress-bar" type="range" value="0" step="0.1" class="flex-1">
-                <span class="text-xs font-mono opacity-60" id="fs-duration">00:00</span>
-            </div>
-            <div class="flex justify-between items-center">
-                <div class="flex gap-6 items-center">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="volume-2" class="w-5 h-5 opacity-60"></i>
-                        <input type="range" class="w-24 h-1 bg-white/20 accent-white">
-                    </div>
-                </div>
-                <div class="flex gap-4">
-                    <!-- Resolution Dropup -->
-                    <div class="relative">
-                        <button onclick="toggleResFS()" class="text-xs flex items-center gap-2 glass border border-white/20 px-4 py-2 rounded-full">
-                            <i data-lucide="settings-2" class="w-4 h-4"></i> 1080p
-                        </button>
-                        <div id="res-dropup" class="absolute bottom-full right-0 mb-4 w-48 glass border border-white/10 rounded-xl overflow-hidden dropdown-enter transition-all shadow-2xl">
-                            <div class="p-3 text-xs uppercase tracking-widest text-gray-500 bg-white/5">Kualitas Video</div>
-                            <button class="w-full text-left px-4 py-3 text-sm hover:bg-white/10 flex justify-between">4K <span class="text-[8px] bg-indigo-500 px-1 rounded flex items-center">PRO</span></button>
-                            <button class="w-full text-left px-4 py-3 text-sm bg-white/20 font-bold">1080p</button>
-                            <button class="w-full text-left px-4 py-3 text-sm hover:bg-white/10">720p</button>
-                            <button class="w-full text-left px-4 py-3 text-sm hover:bg-white/10">Otomatis</button>
-                        </div>
-                    </div>
-                    <button id="speed-btn-fs" class="text-xs font-bold glass border border-white/20 px-4 py-2 rounded-full">1.0X</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Init Lucide and AOS
         lucide.createIcons();
-        AOS.init({ duration: 800, once: true });
+        AOS.init({ duration: 600, once: true });
 
         const video = document.getElementById('main-video');
-        const videoWrapper = document.getElementById('video-wrapper');
-        const fsUI = document.getElementById('fs-ui');
-        const speedIndicator = document.getElementById('speed-indicator');
-        const progressBar = document.getElementById('progress-bar');
-        const fsProgressBar = document.getElementById('fs-progress-bar');
-        const playIconCenter = document.getElementById('play-icon-center');
-        const playIconSmall = document.getElementById('play-icon-small');
-        const fsPlayIcon = document.getElementById('fs-play-icon');
-
+        const container = document.getElementById('video-container');
+        const normalUI = document.getElementById('normal-ui');
+        const fullUI = document.getElementById('full-ui');
+        const clickOverlay = document.getElementById('click-overlay');
+        const seekBar = document.getElementById('seek-bar');
+        const fsSeekBar = document.getElementById('fs-seek-bar');
+        
+        let uiVisible = true;
+        let hideTimeout;
         let isLocked = false;
-        let holdTimer;
+        let isHolding = false;
 
-        // Play/Pause
-        function togglePlay() {
-            if (video.paused) {
-                video.play();
-                updatePlayIcons('pause');
+        // --- Mekanisme Toggle UI ---
+        function showUI() {
+            uiVisible = true;
+            if (document.fullscreenElement) {
+                fullUI.classList.remove('ui-hidden');
+                fullUI.classList.add('ui-visible');
             } else {
-                video.pause();
-                updatePlayIcons('play');
+                normalUI.classList.remove('ui-hidden');
+                normalUI.classList.add('ui-visible');
+            }
+            container.style.cursor = 'default';
+            resetHideTimeout();
+        }
+
+        function hideUI() {
+            if (video.paused) return; // Jangan sembunyikan jika dipause
+            uiVisible = false;
+            normalUI.classList.add('ui-hidden');
+            fullUI.classList.add('ui-hidden');
+            container.style.cursor = 'none';
+        }
+
+        function resetHideTimeout() {
+            clearTimeout(hideTimeout);
+            if (!video.paused) {
+                hideTimeout = setTimeout(hideUI, 3000); // Sembunyikan setelah 3 detik idle
             }
         }
 
-        function updatePlayIcons(state) {
-            const icons = ['play-icon-center', 'play-icon-small', 'fs-play-icon'];
-            icons.forEach(id => {
+        clickOverlay.addEventListener('click', () => {
+            if (uiVisible) hideUI();
+            else showUI();
+        });
+
+        // --- Long Press 2X Speed ---
+        clickOverlay.addEventListener('mousedown', startSpeed);
+        clickOverlay.addEventListener('mouseup', endSpeed);
+        clickOverlay.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeed(); });
+        clickOverlay.addEventListener('touchend', endSpeed);
+
+        function startSpeed() {
+            if(isLocked) return;
+            isHolding = true;
+            setTimeout(() => {
+                if(isHolding) {
+                    video.playbackRate = 2.0;
+                    document.getElementById('speed-indicator').classList.replace('opacity-0', 'opacity-100');
+                }
+            }, 400);
+        }
+
+        function endSpeed() {
+            isHolding = false;
+            video.playbackRate = 1.0;
+            document.getElementById('speed-indicator').classList.replace('opacity-100', 'opacity-0');
+        }
+
+        // --- Video Logic ---
+        function togglePlay() {
+            if (video.paused) {
+                video.play();
+                updateIcons('pause');
+                resetHideTimeout();
+            } else {
+                video.pause();
+                updateIcons('play');
+                showUI();
+            }
+        }
+
+        function updateIcons(state) {
+            const targets = ['play-mini', 'play-center', 'fs-play-icon'];
+            targets.forEach(id => {
                 const el = document.getElementById(id);
-                el.setAttribute('data-lucide', state);
+                if(el) {
+                    el.setAttribute('data-lucide', state);
+                    if(id === 'play-center' || id === 'fs-play-icon') el.classList.add('fill-current');
+                }
             });
             lucide.createIcons();
         }
 
-        // Seek Functions
-        function forward(sec) { video.currentTime += sec; }
-        function rewind(sec) { video.currentTime -= sec; }
+        function forward(s) { video.currentTime += s; resetHideTimeout(); }
+        function rewind(s) { video.currentTime -= s; resetHideTimeout(); }
 
-        // Long Press for 2X
-        videoWrapper.addEventListener('mousedown', startSpeed);
-        videoWrapper.addEventListener('mouseup', endSpeed);
-        videoWrapper.addEventListener('touchstart', startSpeed);
-        videoWrapper.addEventListener('touchend', endSpeed);
-
-        function startSpeed(e) {
-            if(isLocked) return;
-            holdTimer = setTimeout(() => {
-                video.playbackRate = 2.0;
-                speedIndicator.classList.remove('opacity-0');
-                speedIndicator.classList.add('opacity-100');
-            }, 300);
-        }
-
-        function endSpeed() {
-            clearTimeout(holdTimer);
-            video.playbackRate = 1.0;
-            speedIndicator.classList.add('opacity-0');
-            speedIndicator.classList.remove('opacity-100');
-        }
-
-        // Progress Bar
+        // Progress update
         video.addEventListener('timeupdate', () => {
-            const current = (video.currentTime / video.duration) * 100;
-            progressBar.value = current;
-            fsProgressBar.value = current;
-            
-            document.getElementById('current-time').innerText = formatTime(video.currentTime);
-            document.getElementById('fs-current-time').innerText = formatTime(video.currentTime);
+            const val = (video.currentTime / video.duration) * 100;
+            seekBar.value = val;
+            fsSeekBar.value = val;
+            document.getElementById('cur-time').innerText = formatTime(video.currentTime);
+            document.getElementById('fs-cur-time').innerText = formatTime(video.currentTime);
         });
 
         video.addEventListener('loadedmetadata', () => {
-            document.getElementById('duration').innerText = formatTime(video.duration);
-            document.getElementById('fs-duration').innerText = formatTime(video.duration);
+            document.getElementById('total-dur').innerText = formatTime(video.duration);
+            document.getElementById('fs-total-dur').innerText = formatTime(video.duration);
         });
 
-        progressBar.addEventListener('input', (e) => {
-            video.currentTime = (e.target.value / 100) * video.duration;
-        });
-        fsProgressBar.addEventListener('input', (e) => {
-            video.currentTime = (e.target.value / 100) * video.duration;
+        [seekBar, fsSeekBar].forEach(el => {
+            el.addEventListener('input', (e) => {
+                video.currentTime = (e.target.value / 100) * video.duration;
+            });
         });
 
-        function formatTime(time) {
-            const min = Math.floor(time / 60);
-            const sec = Math.floor(time % 60);
-            return `${min}:${sec < 10 ? '0' + sec : sec}`;
+        function formatTime(t) {
+            const m = Math.floor(t / 60);
+            const s = Math.floor(t % 60);
+            return `${m}:${s < 10 ? '0' + s : s}`;
         }
 
-        // Fullscreen Logic
-        function goFullscreen() {
-            if (videoWrapper.requestFullscreen) {
-                videoWrapper.requestFullscreen();
-            } else if (videoWrapper.webkitRequestFullscreen) {
-                videoWrapper.webkitRequestFullscreen();
+        // --- Fullscreen & Orientation ---
+        async function goFullscreen() {
+            try {
+                if (container.requestFullscreen) {
+                    await container.requestFullscreen();
+                } else if (container.webkitRequestFullscreen) {
+                    await container.webkitRequestFullscreen();
+                }
+                
+                // Lock Landscape on Mobile
+                if (screen.orientation && screen.orientation.lock) {
+                    await screen.orientation.lock('landscape-left').catch(() => {});
+                }
+            } catch (err) {
+                console.log("Fullscreen failed");
             }
         }
 
@@ -423,67 +448,48 @@
 
         document.addEventListener('fullscreenchange', () => {
             if (document.fullscreenElement) {
-                fsUI.classList.remove('hidden');
-                fsUI.classList.add('flex');
-                video.style.height = '100%';
-                video.style.width = '100%';
-                // Force rotation check for mobile if needed in real app
+                normalUI.classList.add('hidden');
+                fullUI.classList.remove('hidden');
+                fullUI.classList.add('flex');
             } else {
-                fsUI.classList.add('hidden');
-                fsUI.classList.remove('flex');
+                normalUI.classList.remove('hidden');
+                fullUI.classList.add('hidden');
+                fullUI.classList.remove('flex');
+                if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
             }
+            showUI();
         });
 
-        // Dropdowns
         function toggleRes() {
-            const dd = document.getElementById('res-dropdown');
-            dd.classList.toggle('dropdown-enter');
-            dd.classList.toggle('dropdown-active');
+            const menu = document.getElementById('res-menu');
+            const isHidden = menu.classList.contains('opacity-0');
+            if(isHidden) {
+                menu.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+            } else {
+                menu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            }
         }
 
-        function toggleResFS() {
-            const dd = document.getElementById('res-dropup');
-            dd.classList.toggle('dropdown-enter');
-            dd.classList.toggle('dropdown-active');
-        }
-
-        // Lock Toggle
         function toggleLock() {
             isLocked = !isLocked;
             const btn = document.getElementById('lock-btn');
-            const middle = document.getElementById('fs-middle');
-            const bottom = document.getElementById('fs-bottom');
+            const mid = document.getElementById('fs-middle');
+            const bot = document.getElementById('fs-bottom');
             
             if(isLocked) {
-                btn.innerHTML = `<i data-lucide="lock" class="w-5 h-5 text-indigo-400"></i>`;
-                middle.classList.add('opacity-0', 'pointer-events-none');
-                bottom.classList.add('opacity-0', 'pointer-events-none');
+                btn.innerHTML = `<i data-lucide="lock" class="w-4 h-4 text-white"></i>`;
+                mid.style.opacity = '0';
+                mid.style.pointerEvents = 'none';
+                bot.style.opacity = '0';
+                bot.style.pointerEvents = 'none';
             } else {
-                btn.innerHTML = `<i data-lucide="unlock" class="w-5 h-5"></i>`;
-                middle.classList.remove('opacity-0', 'pointer-events-none');
-                bottom.classList.remove('opacity-0', 'pointer-events-none');
+                btn.innerHTML = `<i data-lucide="unlock" class="w-4 h-4"></i>`;
+                mid.style.opacity = '1';
+                mid.style.pointerEvents = 'auto';
+                bot.style.opacity = '1';
+                bot.style.pointerEvents = 'auto';
             }
             lucide.createIcons();
-        }
-
-        // Event for keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if(e.code === "Space") { e.preventDefault(); togglePlay(); }
-            if(e.code === "ArrowRight") forward(10);
-            if(e.code === "ArrowLeft") rewind(10);
-        });
-
-        // Close dropdowns on outside click
-        window.onclick = function(event) {
-            if (!event.target.matches('button')) {
-                const dds = [document.getElementById('res-dropdown'), document.getElementById('res-dropup')];
-                dds.forEach(dd => {
-                    if(dd.classList.contains('dropdown-active')) {
-                        dd.classList.add('dropdown-enter');
-                        dd.classList.remove('dropdown-active');
-                    }
-                });
-            }
         }
     </script>
 </body>
