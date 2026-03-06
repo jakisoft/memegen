@@ -3,494 +3,455 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VibePlayer Pro - Luxury Streaming</title>
+    <title>Luxe Multiplayer | Radiant Realm</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- AOS CSS -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- AOS JS -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;600;800&display=swap');
         
-        :root {
-            --bg-deep: #191919;
-            --accent: #ffffff;
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #ffffff;
         }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-deep);
-            color: white;
-            margin: 0;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+        #game-wrapper {
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: #f8fafc;
         }
 
-        /* Tipografi Presisi - Mencegah "Kebesaran" */
-        .text-tiny { font-size: 0.65rem; }
-        .text-compact { font-size: 0.8rem; }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #191919; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-
-        /* Mode Fullscreen Landscape Mobile */
-        #video-container:fullscreen {
-            width: 100vw;
-            height: 100vh;
-            background: black;
-        }
-
-        @media (max-width: 915px) and (orientation: landscape) {
-            #video-container:fullscreen {
-                display: flex;
-                align-items: center;
-                justify-content: center;
+        /* Paksa Landscape untuk Mobile */
+        @media (orientation: portrait) {
+            #game-wrapper {
+                width: 100vh !important; height: 100vw !important;
+                transform: rotate(90deg); transform-origin: center;
+                top: 50% !important; left: 50% !important;
+                translate: -50% -50%;
             }
         }
 
-        /* Glassmorphism Presisi */
-        .glass-ui {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        canvas { display: block; }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 20px;
         }
 
-        /* Slider Styling */
-        input[type="range"] {
-            -webkit-appearance: none;
-            height: 2px;
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
-            cursor: pointer;
+        /* Desain Bottom Sheet */
+        #user-sheet {
+            transform: translateY(100%);
+            transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 10px;
-            width: 10px;
-            border-radius: 50%;
-            background: white;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+        #user-sheet.open { transform: translateY(0); }
+
+        /* Kontrol Joystick */
+        #joystick-base {
+            position: absolute; bottom: 40px; left: 40px;
+            width: 130px; height: 130px; border-radius: 50%;
+            background: rgba(0, 0, 0, 0.05);
+            border: 2px solid rgba(0, 0, 0, 0.05);
+            touch-action: none; display: none;
+        }
+        #joystick-stick {
+            position: absolute; top: 50%; left: 50%;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: #00E5FF;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 10px 25px rgba(0, 229, 255, 0.4);
+            pointer-events: none;
         }
 
-        /* Animasi UI Toggle */
-        .ui-hidden { opacity: 0; pointer-events: none; transform: translateY(5px); }
-        .ui-visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
-        .transition-ui { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        /* Rotate Helper */
-        .is-fullscreen { cursor: none; }
-        
-        .speed-2x-badge {
-            background: rgba(255,255,255,0.15);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 1px;
+        .mic-active {
+            animation: pulse-mic 1.5s infinite;
+        }
+        @keyframes pulse-mic {
+            0% { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.7); }
+            100% { box-shadow: 0 0 0 15px rgba(0, 229, 255, 0); }
         }
     </style>
 </head>
-<body class="antialiased selection:bg-white/20">
+<body>
 
-    <!-- Navbar Minimalis -->
-    <nav class="fixed top-0 w-full z-50 px-6 py-3 border-b border-white/5 glass-ui flex justify-between items-center">
-        <div class="flex items-center gap-2">
-            <div class="w-6 h-6 bg-white rounded flex items-center justify-center">
-                <i data-lucide="play" class="text-[#191919] w-3 h-3 fill-current"></i>
-            </div>
-            <span class="text-sm font-bold tracking-tighter">VIBE<span class="font-light opacity-50">PRO</span></span>
-        </div>
-        <div class="flex items-center gap-5">
-            <button class="text-tiny font-semibold opacity-60 hover:opacity-100 transition-opacity uppercase tracking-widest">Library</button>
-            <div class="w-7 h-7 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 border border-white/10"></div>
-        </div>
-    </nav>
-
-    <main class="pt-20 pb-10 max-w-6xl mx-auto px-4">
-        <div class="flex flex-col lg:flex-row gap-8">
-            
-            <!-- Player Section -->
-            <div class="flex-1 space-y-5">
-                <!-- Video Wrap -->
-                <div id="video-container" class="relative group aspect-video bg-black rounded-lg overflow-hidden ring-1 ring-white/5 shadow-2xl transition-ui">
-                    <video id="main-video" class="w-full h-full object-contain">
-                        <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
-                    </video>
-
-                    <!-- Click Overlay (Untuk Toggle UI) -->
-                    <div id="click-overlay" class="absolute inset-0 z-10 cursor-pointer"></div>
-
-                    <!-- UI NORMAL MODE -->
-                    <div id="normal-ui" class="absolute inset-0 z-20 transition-ui flex flex-col justify-between pointer-events-none">
-                        <div class="p-4 flex justify-end">
-                             <div id="speed-indicator" class="speed-2x-badge opacity-0 transition-opacity">2.0X SPEED</div>
-                        </div>
-
-                        <!-- Center Play/Skip -->
-                        <div class="flex items-center justify-center gap-10 text-white pointer-events-auto">
-                            <button onclick="rewind(10)" class="hover:scale-110 active:scale-95 transition-all opacity-80 hover:opacity-100"><i data-lucide="rotate-ccw" class="w-6 h-6"></i></button>
-                            <button id="play-center" onclick="togglePlay()" class="bg-white/10 p-4 rounded-full backdrop-blur-md ring-1 ring-white/20 hover:bg-white/20 transition-all">
-                                <i data-lucide="play" class="w-7 h-7 fill-current"></i>
-                            </button>
-                            <button onclick="forward(10)" class="hover:scale-110 active:scale-95 transition-all opacity-80 hover:opacity-100"><i data-lucide="rotate-cw" class="w-6 h-6"></i></button>
-                        </div>
-
-                        <!-- Bottom Controls -->
-                        <div class="p-4 bg-gradient-to-t from-black/80 to-transparent pointer-events-auto">
-                            <div class="flex items-center gap-3 mb-3">
-                                <span class="text-[10px] font-mono opacity-60" id="cur-time">0:00</span>
-                                <input id="seek-bar" type="range" value="0" step="0.1" class="flex-1 accent-white">
-                                <span class="text-[10px] font-mono opacity-60" id="total-dur">0:00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="flex items-center gap-4">
-                                    <button onclick="togglePlay()"><i data-lucide="play" id="play-mini" class="w-4 h-4"></i></button>
-                                    <div class="flex items-center gap-2 group">
-                                        <i data-lucide="volume-2" class="w-4 h-4 opacity-60"></i>
-                                        <input type="range" class="w-16 opacity-0 group-hover:opacity-100 transition-opacity" value="80">
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-4">
-                                    <!-- Custom Res Dropdown -->
-                                    <div class="relative">
-                                        <button onclick="toggleRes()" class="text-[10px] font-bold border border-white/20 px-2 py-1 rounded hover:bg-white/10 uppercase">1080p</button>
-                                        <div id="res-menu" class="absolute bottom-full right-0 mb-2 w-28 glass-ui border border-white/10 rounded-lg overflow-hidden opacity-0 scale-95 pointer-events-none transition-all">
-                                            <button class="w-full text-left px-3 py-2 text-tiny hover:bg-white/10 border-b border-white/5">4K HDR</button>
-                                            <button class="w-full text-left px-3 py-2 text-tiny bg-white/20 font-bold">1080p</button>
-                                            <button class="w-full text-left px-3 py-2 text-tiny hover:bg-white/10">720p</button>
-                                        </div>
-                                    </div>
-                                    <button onclick="goFullscreen()"><i data-lucide="maximize" class="w-4 h-4"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- UI FULLSCREEN MODE -->
-                    <div id="full-ui" class="hidden fixed inset-0 z-50 glass-ui flex-col justify-between p-6 pointer-events-none transition-ui">
-                        <!-- Top Header -->
-                        <div class="flex justify-between items-center pointer-events-auto">
-                            <button onclick="exitFullscreen()" class="flex items-center gap-4 group">
-                                <i data-lucide="chevron-left" class="w-5 h-5 group-hover:-translate-x-1 transition-transform"></i>
-                                <div class="flex flex-col text-left">
-                                    <span class="text-tiny opacity-50 uppercase tracking-widest">Memutar Sekarang</span>
-                                    <span class="text-compact font-bold">The Art of Minimalist Living - Part I</span>
-                                </div>
-                            </button>
-                            <div class="flex gap-5 items-center">
-                                <button onclick="toggleLock()" id="lock-btn" class="p-2 rounded-full hover:bg-white/10 transition-all"><i data-lucide="unlock" class="w-4 h-4"></i></button>
-                                <button class="p-2 rounded-full hover:bg-white/10 transition-all"><i data-lucide="settings" class="w-4 h-4"></i></button>
-                            </div>
-                        </div>
-
-                        <!-- Center Controls Fullscreen -->
-                        <div id="fs-middle" class="flex items-center justify-center gap-10 md:gap-20 pointer-events-auto">
-                            <button class="opacity-40 hover:opacity-100 transition-opacity"><i data-lucide="skip-back" class="w-6 h-6"></i></button>
-                            <button onclick="rewind(10)" class="hover:scale-110 active:scale-95 transition-all"><i data-lucide="rotate-ccw" class="w-8 h-8"></i></button>
-                            <button onclick="togglePlay()" class="bg-white text-black p-5 rounded-full ring-8 ring-white/10 hover:scale-105 transition-all">
-                                <i data-lucide="play" id="fs-play-icon" class="w-8 h-8 fill-current"></i>
-                            </button>
-                            <button onclick="forward(10)" class="hover:scale-110 active:scale-95 transition-all"><i data-lucide="rotate-cw" class="w-8 h-8"></i></button>
-                            <button class="opacity-40 hover:opacity-100 transition-opacity"><i data-lucide="skip-forward" class="w-6 h-6"></i></button>
-                        </div>
-
-                        <!-- Bottom Controls Fullscreen -->
-                        <div id="fs-bottom" class="space-y-4 pointer-events-auto">
-                            <div class="flex items-center gap-4">
-                                <span class="text-tiny font-mono opacity-50" id="fs-cur-time">00:00</span>
-                                <input id="fs-seek-bar" type="range" value="0" step="0.1" class="flex-1">
-                                <span class="text-tiny font-mono opacity-50" id="fs-total-dur">00:00</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <div class="flex items-center gap-8">
-                                    <div class="flex items-center gap-3">
-                                        <i data-lucide="volume-2" class="w-4 h-4 opacity-50"></i>
-                                        <input type="range" class="w-24">
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <button class="text-tiny border border-white/20 px-3 py-1 rounded-full hover:bg-white/10">Subtitle: Off</button>
-                                    </div>
-                                </div>
-                                <div class="flex gap-3">
-                                    <!-- Prev/Next Episode Buttons -->
-                                    <button class="flex items-center gap-2 text-tiny font-bold glass-ui border border-white/10 px-4 py-2 rounded-full hover:bg-white/20 transition-all">
-                                        <i data-lucide="chevron-left" class="w-3 h-3"></i> PREV EPS
-                                    </button>
-                                    <button class="flex items-center gap-2 text-tiny font-bold bg-white text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-all">
-                                        NEXT EPS <i data-lucide="chevron-right" class="w-3 h-3"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Metadata & Tabs -->
-                <div class="space-y-4" data-aos="fade-up">
-                    <div class="flex justify-between items-start">
-                        <div class="space-y-1">
-                            <h1 class="text-lg font-bold tracking-tight">The Art of Minimalist Living - Part I</h1>
-                            <div class="flex items-center gap-3 text-tiny text-gray-400">
-                                <span>1.2M Menonton</span>
-                                <span>•</span>
-                                <span>Februari 2024</span>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="flex items-center gap-2 border border-white/10 px-3 py-2 rounded-lg text-tiny font-bold hover:bg-white/5"><i data-lucide="share" class="w-3 h-3"></i> BAGIKAN</button>
-                            <button class="flex items-center gap-2 bg-white text-black px-3 py-2 rounded-lg text-tiny font-bold hover:opacity-90"><i data-lucide="download" class="w-3 h-3"></i> UNDUH</button>
-                        </div>
-                    </div>
-
-                    <!-- Tabs Episode -->
-                    <div class="pt-2 border-b border-white/5 flex gap-6">
-                        <button class="text-tiny font-bold border-b-2 border-white pb-2">Deskripsi</button>
-                        <button class="text-tiny font-bold text-gray-500 pb-2">Episode (12)</button>
-                        <button class="text-tiny font-bold text-gray-500 pb-2">Komentar</button>
-                    </div>
-
-                    <p class="text-compact text-gray-400 leading-relaxed max-w-2xl">
-                        Mempelajari bagaimana kesederhanaan dapat meningkatkan produktivitas dan kedamaian batin dalam dunia modern yang serba cepat.
-                    </p>
-                </div>
-
-                <!-- Comments -->
-                <div class="pt-6 space-y-4">
-                    <div class="flex gap-4">
-                        <div class="w-8 h-8 rounded-full bg-gray-700"></div>
-                        <input type="text" placeholder="Tambahkan komentar..." class="bg-transparent border-b border-white/10 flex-1 py-1 text-compact focus:outline-none focus:border-white transition-all">
-                    </div>
-                </div>
-            </div>
-
-            <!-- Side Sidebar: Episode List -->
-            <div class="w-full lg:w-72 space-y-4" data-aos="fade-left">
-                <h3 class="text-tiny font-bold uppercase tracking-widest opacity-50">Daftar Putar</h3>
-                <div class="space-y-2 max-h-[500px] overflow-y-auto pr-2">
-                    <script>
-                        const episodes = [
-                            { title: "Awal Perjalanan", duration: "12:40", active: true },
-                            { title: "Menemukan Fokus", duration: "10:15", active: false },
-                            { title: "Ruang yang Bersih", duration: "15:20", active: false },
-                            { title: "Digital Minimalis", duration: "08:45", active: false },
-                            { title: "Kebiasaan Baru", duration: "11:30", active: false }
-                        ];
-                        episodes.forEach((ep, i) => {
-                            document.write(`
-                                <div class="group flex gap-3 p-2 rounded-lg transition-all cursor-pointer ${ep.active ? 'bg-white/5 ring-1 ring-white/10' : 'hover:bg-white/5'}">
-                                    <div class="w-24 aspect-video bg-gray-800 rounded relative overflow-hidden flex-shrink-0">
-                                        ${ep.active ? '<div class="absolute inset-0 bg-black/40 flex items-center justify-center"><i data-lucide="play" class="w-3 h-3 fill-current"></i></div>' : ''}
-                                        <span class="absolute bottom-1 right-1 text-[8px] bg-black/80 px-1 rounded">${ep.duration}</span>
-                                    </div>
-                                    <div class="flex flex-col justify-center min-w-0">
-                                        <h4 class="text-tiny font-semibold truncate ${ep.active ? 'text-white' : 'text-gray-400 group-hover:text-white'}">Eps ${i+1}: ${ep.title}</h4>
-                                        <span class="text-[9px] text-gray-600 mt-1 uppercase">${ep.active ? 'Sedang Diputar' : 'Belum Ditonton'}</span>
-                                    </div>
-                                </div>
-                            `);
-                        });
-                    </script>
+    <div id="game-wrapper">
+        <!-- HUD: Lokasi -->
+        <div class="fixed top-8 left-8 z-50 pointer-events-none">
+            <div class="glass p-4 px-6 flex items-center gap-4" data-aos="fade-right">
+                <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-gray-400">Lokasi Sekarang</p>
+                    <h3 id="location-name" class="text-sm font-extrabold text-black uppercase">Area Inisialisasi</h3>
                 </div>
             </div>
         </div>
-    </main>
 
-    <script>
-        lucide.createIcons();
-        AOS.init({ duration: 600, once: true });
+        <!-- HUD: Mic & Pengguna -->
+        <div class="fixed top-8 right-8 z-50 flex gap-3 pointer-events-auto">
+            <button id="mic-btn" class="glass w-12 h-12 flex items-center justify-center transition-all hover:scale-110">
+                <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+            </button>
+            <div class="glass h-12 px-5 flex items-center gap-2">
+                <span id="player-count" class="text-xs font-bold">1</span>
+                <span class="text-[10px] font-bold uppercase text-gray-400">Online</span>
+            </div>
+        </div>
 
-        const video = document.getElementById('main-video');
-        const container = document.getElementById('video-container');
-        const normalUI = document.getElementById('normal-ui');
-        const fullUI = document.getElementById('full-ui');
-        const clickOverlay = document.getElementById('click-overlay');
-        const seekBar = document.getElementById('seek-bar');
-        const fsSeekBar = document.getElementById('fs-seek-bar');
-        
-        let uiVisible = true;
-        let hideTimeout;
-        let isLocked = false;
-        let isHolding = false;
+        <!-- Joystick -->
+        <div id="joystick-base">
+            <div id="joystick-stick"></div>
+        </div>
+    </div>
 
-        // --- Mekanisme Toggle UI ---
-        function showUI() {
-            uiVisible = true;
-            if (document.fullscreenElement) {
-                fullUI.classList.remove('ui-hidden');
-                fullUI.classList.add('ui-visible');
-            } else {
-                normalUI.classList.remove('ui-hidden');
-                normalUI.classList.add('ui-visible');
-            }
-            container.style.cursor = 'default';
-            resetHideTimeout();
-        }
-
-        function hideUI() {
-            if (video.paused) return; // Jangan sembunyikan jika dipause
-            uiVisible = false;
-            normalUI.classList.add('ui-hidden');
-            fullUI.classList.add('ui-hidden');
-            container.style.cursor = 'none';
-        }
-
-        function resetHideTimeout() {
-            clearTimeout(hideTimeout);
-            if (!video.paused) {
-                hideTimeout = setTimeout(hideUI, 3000); // Sembunyikan setelah 3 detik idle
-            }
-        }
-
-        clickOverlay.addEventListener('click', () => {
-            if (uiVisible) hideUI();
-            else showUI();
-        });
-
-        // --- Long Press 2X Speed ---
-        clickOverlay.addEventListener('mousedown', startSpeed);
-        clickOverlay.addEventListener('mouseup', endSpeed);
-        clickOverlay.addEventListener('touchstart', (e) => { e.preventDefault(); startSpeed(); });
-        clickOverlay.addEventListener('touchend', endSpeed);
-
-        function startSpeed() {
-            if(isLocked) return;
-            isHolding = true;
-            setTimeout(() => {
-                if(isHolding) {
-                    video.playbackRate = 2.0;
-                    document.getElementById('speed-indicator').classList.replace('opacity-0', 'opacity-100');
-                }
-            }, 400);
-        }
-
-        function endSpeed() {
-            isHolding = false;
-            video.playbackRate = 1.0;
-            document.getElementById('speed-indicator').classList.replace('opacity-100', 'opacity-0');
-        }
-
-        // --- Video Logic ---
-        function togglePlay() {
-            if (video.paused) {
-                video.play();
-                updateIcons('pause');
-                resetHideTimeout();
-            } else {
-                video.pause();
-                updateIcons('play');
-                showUI();
-            }
-        }
-
-        function updateIcons(state) {
-            const targets = ['play-mini', 'play-center', 'fs-play-icon'];
-            targets.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.setAttribute('data-lucide', state);
-                    if(id === 'play-center' || id === 'fs-play-icon') el.classList.add('fill-current');
-                }
-            });
-            lucide.createIcons();
-        }
-
-        function forward(s) { video.currentTime += s; resetHideTimeout(); }
-        function rewind(s) { video.currentTime -= s; resetHideTimeout(); }
-
-        // Progress update
-        video.addEventListener('timeupdate', () => {
-            const val = (video.currentTime / video.duration) * 100;
-            seekBar.value = val;
-            fsSeekBar.value = val;
-            document.getElementById('cur-time').innerText = formatTime(video.currentTime);
-            document.getElementById('fs-cur-time').innerText = formatTime(video.currentTime);
-        });
-
-        video.addEventListener('loadedmetadata', () => {
-            document.getElementById('total-dur').innerText = formatTime(video.duration);
-            document.getElementById('fs-total-dur').innerText = formatTime(video.duration);
-        });
-
-        [seekBar, fsSeekBar].forEach(el => {
-            el.addEventListener('input', (e) => {
-                video.currentTime = (e.target.value / 100) * video.duration;
-            });
-        });
-
-        function formatTime(t) {
-            const m = Math.floor(t / 60);
-            const s = Math.floor(t % 60);
-            return `${m}:${s < 10 ? '0' + s : s}`;
-        }
-
-        // --- Fullscreen & Orientation ---
-        async function goFullscreen() {
-            try {
-                if (container.requestFullscreen) {
-                    await container.requestFullscreen();
-                } else if (container.webkitRequestFullscreen) {
-                    await container.webkitRequestFullscreen();
-                }
+    <!-- Multiplayer Bottom Sheet (Input User) -->
+    <div id="sheet-overlay" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[1000] hidden flex items-end">
+        <div id="user-sheet" class="w-full glass rounded-t-[40px] p-10 pb-16 shadow-2xl">
+            <div class="w-16 h-1 bg-gray-200 rounded-full mx-auto mb-8"></div>
+            <div class="max-w-md mx-auto text-center">
+                <h2 class="text-3xl font-black italic tracking-tighter mb-2">SIAPA NAMA ANDA?</h2>
+                <p class="text-gray-400 text-sm mb-8 italic">Pemain lain akan melihat nama ini di atas karakter Anda.</p>
                 
-                // Lock Landscape on Mobile
-                if (screen.orientation && screen.orientation.lock) {
-                    await screen.orientation.lock('landscape-left').catch(() => {});
+                <input type="text" id="username-input" placeholder="Masukkan Username..." 
+                    class="w-full bg-gray-50 border-2 border-gray-100 p-5 rounded-2xl mb-6 text-center font-bold focus:border-cyan-400 outline-none transition-all uppercase tracking-widest">
+                
+                <button id="btn-enter" class="w-full bg-black text-white p-5 rounded-2xl font-black tracking-widest hover:scale-[1.02] transition-transform active:scale-95 shadow-xl">
+                    MASUK KE DUNIA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loader -->
+    <div id="loader" class="fixed inset-0 bg-white z-[2000] flex flex-col items-center justify-center">
+        <h1 class="text-6xl font-black italic tracking-tighter mb-6">LUXE<span class="text-cyan-400">.</span></h1>
+        <div class="w-48 h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div id="progress" class="h-full bg-cyan-400 w-0 transition-all duration-300"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Konfigurasi & State ---
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-id';
+
+        let scene, camera, renderer, clock;
+        let yaw = 0, pitch = 0, moveForward = 0, moveRight = 0;
+        let joystickActive = false;
+        let otherPlayers = {}; 
+        let obstacles = []; 
+        let micActive = false;
+        let myUsername = "Guest";
+        let isAuthReady = false;
+
+        // --- THREE.JS ENGINE ---
+        function initEngine() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf1f5f9);
+            scene.fog = new THREE.Fog(0xf1f5f9, 5, 80);
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.7, 5);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            document.getElementById('game-wrapper').appendChild(renderer.domElement);
+
+            clock = new THREE.Clock();
+
+            // Pencahayaan
+            scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const sun = new THREE.DirectionalLight(0xffffff, 0.5);
+            sun.position.set(10, 20, 10);
+            scene.add(sun);
+
+            // Lantai
+            const grid = new THREE.GridHelper(200, 100, 0x000000, 0xe2e8f0);
+            scene.add(grid);
+
+            // Membuat Halangan
+            generateObstacles();
+            
+            setupControls();
+            animate();
+        }
+
+        function generateObstacles() {
+            const colors = [0x00E5FF, 0x000000, 0xffffff];
+            for(let i = 0; i < 25; i++) {
+                const h = 4 + Math.random() * 6;
+                const geo = new THREE.BoxGeometry(2, h, 2);
+                const mat = new THREE.MeshStandardMaterial({ 
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    metalness: 0.8, roughness: 0.1 
+                });
+                const pillar = new THREE.Mesh(geo, mat);
+                pillar.position.set((Math.random()-0.5)*80, h/2, (Math.random()-0.5)*80);
+                scene.add(pillar);
+                
+                // Simpan untuk deteksi tabrakan
+                obstacles.push({
+                    x: pillar.position.x,
+                    z: pillar.position.z,
+                    radius: 1.5 
+                });
+            }
+        }
+
+        // --- LOGIKA MULTIPLAYER ---
+        async function joinGame() {
+            // Mandat: Lakukan autentikasi TERLEBIH DAHULU dan tunggu sampai selesai
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
-            } catch (err) {
-                console.log("Fullscreen failed");
+            } catch (error) {
+                console.error("Auth failed:", error);
+                return;
+            }
+
+            // Tunggu sebentar untuk memastikan auth.currentUser terisi
+            const playersCol = collection(db, 'artifacts', appId, 'public', 'data', 'players');
+            
+            // Listener untuk pemain lain dengan callback error (Mandatori)
+            onSnapshot(playersCol, (snapshot) => {
+                if (!auth.currentUser) return;
+                
+                snapshot.docChanges().forEach(change => {
+                    const data = change.doc.data();
+                    const id = change.doc.id;
+                    if (id === auth.currentUser.uid) return;
+
+                    if (change.type === 'added' || change.type === 'modified') {
+                        updateOtherPlayer(id, data);
+                    } else if (change.type === 'removed') {
+                        removeOtherPlayer(id);
+                    }
+                });
+                document.getElementById('player-count').innerText = snapshot.size;
+            }, (error) => {
+                // Tangani error perizinan jika snapshot gagal
+                console.error("Firestore Error:", error);
+            });
+
+            // Sinkronisasi data diri sendiri setiap 100ms
+            setInterval(() => {
+                if (!auth.currentUser) return;
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'players', auth.currentUser.uid), {
+                    username: myUsername,
+                    x: camera.position.x,
+                    z: camera.position.z,
+                    yaw: yaw,
+                    mic: micActive,
+                    lastSeen: Date.now()
+                });
+            }, 100);
+        }
+
+        function updateOtherPlayer(id, data) {
+            if (!otherPlayers[id]) {
+                const group = new THREE.Group();
+                const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 0.4), new THREE.MeshStandardMaterial({ color: 0x000000 }));
+                body.position.y = 0.8;
+                group.add(body);
+
+                // Nametag
+                const canvas = document.createElement('canvas');
+                canvas.width = 256; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                ctx.fillRect(0,0,256,64); 
+                ctx.font = 'bold 30px Plus Jakarta Sans';
+                ctx.fillStyle = '#000'; ctx.textAlign = 'center';
+                ctx.fillText(data.username || "Guest", 128, 42);
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture }));
+                sprite.position.y = 2.2;
+                sprite.scale.set(2, 0.5, 1);
+                group.add(sprite);
+
+                scene.add(group);
+                otherPlayers[id] = group;
+            }
+            
+            const p = otherPlayers[id];
+            p.position.set(data.x, 0, data.z);
+            p.rotation.y = data.yaw;
+        }
+
+        function removeOtherPlayer(id) {
+            if (otherPlayers[id]) {
+                scene.remove(otherPlayers[id]);
+                delete otherPlayers[id];
             }
         }
 
-        function exitFullscreen() {
-            if (document.exitFullscreen) document.exitFullscreen();
+        // --- TABRAKAN & HUD ---
+        function checkCollision(nextX, nextZ) {
+            for (let obs of obstacles) {
+                const dist = Math.sqrt((nextX - obs.x)**2 + (nextZ - obs.z)**2);
+                if (dist < obs.radius) return true;
+            }
+            return false;
         }
 
-        document.addEventListener('fullscreenchange', () => {
-            if (document.fullscreenElement) {
-                normalUI.classList.add('hidden');
-                fullUI.classList.remove('hidden');
-                fullUI.classList.add('flex');
-            } else {
-                normalUI.classList.remove('hidden');
-                fullUI.classList.add('hidden');
-                fullUI.classList.remove('flex');
-                if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+        function updateLocationHUD() {
+            const x = camera.position.x;
+            const z = camera.position.z;
+            let zone = "Pusat Realm";
+            if (x > 20) zone = "Zona Timur";
+            else if (x < -20) zone = "Zona Barat";
+            else if (z > 20) zone = "Sektor Selatan";
+            else if (z < -20) zone = "Sektor Utara";
+            
+            document.getElementById('location-name').innerText = zone;
+        }
+
+        // --- KONTROL ---
+        function setupControls() {
+            const startBtn = document.getElementById('btn-enter');
+            const overlay = document.getElementById('sheet-overlay');
+            const input = document.getElementById('username-input');
+
+            startBtn.onclick = () => {
+                if (input.value.trim().length < 2) return;
+                myUsername = input.value.toUpperCase();
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                    document.getElementById('joystick-base').style.display = 'block';
+                    joinGame();
+                }, 500);
+            };
+
+            const micBtn = document.getElementById('mic-btn');
+            micBtn.onclick = () => {
+                micActive = !micActive;
+                micBtn.classList.toggle('mic-active', micActive);
+                document.getElementById('mic-icon').classList.toggle('text-cyan-400', micActive);
+                document.getElementById('mic-icon').classList.toggle('text-gray-400', !micActive);
+            };
+
+            const base = document.getElementById('joystick-base');
+            const stick = document.getElementById('joystick-stick');
+
+            const handleJoy = (e) => {
+                if(!joystickActive) return;
+                const touch = e.touches ? e.touches[0] : e;
+                const rect = base.getBoundingClientRect();
+                const dx = touch.clientX - (rect.left + rect.width/2);
+                const dy = touch.clientY - (rect.top + rect.height/2);
+                
+                const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
+                const angle = Math.atan2(dy, dx);
+                
+                const tx = Math.cos(angle) * dist;
+                const ty = Math.sin(angle) * dist;
+                stick.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
+                
+                moveRight = tx / 45;
+                moveForward = -ty / 45;
+            };
+
+            base.addEventListener('touchstart', (e) => { joystickActive = true; handleJoy(e); });
+            window.addEventListener('touchmove', (e) => handleJoy(e), {passive: false});
+            window.addEventListener('touchend', () => {
+                joystickActive = false;
+                stick.style.transform = `translate(-50%, -50%)`;
+                moveForward = 0; moveRight = 0;
+            });
+
+            let lastX, lastY;
+            window.addEventListener('touchstart', (e) => {
+                if(e.target.id === 'joystick-base') return;
+                lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
+            });
+            window.addEventListener('touchmove', (e) => {
+                if(e.target.id === 'joystick-base') return;
+                const dx = e.touches[0].pageX - lastX;
+                const dy = e.touches[0].pageY - lastY;
+                yaw -= dx * 0.005;
+                pitch -= dy * 0.005;
+                pitch = Math.max(-Math.PI/2.2, Math.min(Math.PI/2.2, pitch));
+                lastX = e.touches[0].pageX; lastY = e.touches[0].pageY;
+            });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            if(!camera) return;
+
+            camera.rotation.order = 'YXZ';
+            camera.rotation.y = yaw;
+            camera.rotation.x = pitch;
+
+            const speed = 7.0;
+            const forwardV = new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+            const rightV = new THREE.Vector3(1,0,0).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+
+            const nextPos = camera.position.clone();
+            nextPos.addScaledVector(forwardV, moveForward * speed * delta);
+            nextPos.addScaledVector(rightV, moveRight * speed * delta);
+
+            if (!checkCollision(nextPos.x, nextPos.z)) {
+                camera.position.copy(nextPos);
             }
-            showUI();
+            
+            camera.position.y = 1.7;
+            updateLocationHUD();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => {
+            let p = 0;
+            const intv = setInterval(() => {
+                p += 10;
+                document.getElementById('progress').style.width = p + '%';
+                if(p >= 100) {
+                    clearInterval(intv);
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('sheet-overlay').classList.remove('hidden');
+                    setTimeout(() => document.getElementById('user-sheet').classList.add('open'), 100);
+                    initEngine();
+                }
+            }, 100);
+        };
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        function toggleRes() {
-            const menu = document.getElementById('res-menu');
-            const isHidden = menu.classList.contains('opacity-0');
-            if(isHidden) {
-                menu.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
-            } else {
-                menu.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
-            }
+        // Inisialisasi AOS
+        if (typeof AOS !== 'undefined') {
+            AOS.init({ duration: 1000, once: true });
         }
 
-        function toggleLock() {
-            isLocked = !isLocked;
-            const btn = document.getElementById('lock-btn');
-            const mid = document.getElementById('fs-middle');
-            const bot = document.getElementById('fs-bottom');
-            
-            if(isLocked) {
-                btn.innerHTML = `<i data-lucide="lock" class="w-4 h-4 text-white"></i>`;
-                mid.style.opacity = '0';
-                mid.style.pointerEvents = 'none';
-                bot.style.opacity = '0';
-                bot.style.pointerEvents = 'none';
-            } else {
-                btn.innerHTML = `<i data-lucide="unlock" class="w-4 h-4"></i>`;
-                mid.style.opacity = '1';
-                mid.style.pointerEvents = 'auto';
-                bot.style.opacity = '1';
-                bot.style.pointerEvents = 'auto';
-            }
-            lucide.createIcons();
-        }
+        // Pantau status autentikasi
+        onAuthStateChanged(auth, (u) => {
+            if (u) isAuthReady = true;
+        });
     </script>
 </body>
 </html>
